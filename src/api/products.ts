@@ -11,3 +11,6 @@ export interface Product {
   description: string
   category: string
 }
+export const getProduct = function (id: string) {
+  return api.get<Product>(`/products/${id}`)
+}

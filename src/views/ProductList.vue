@@ -5,6 +5,7 @@
   <div v-else>
     <div v-for="product in products" :key="product.id">
       {{ product.id }}-{{ product.name }}-{{ product.price }}
+      <RouterLink :to="`/products/${product.id}`">详情</RouterLink>
     </div>
   </div>
 </template>
