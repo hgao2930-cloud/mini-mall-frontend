@@ -1,11 +1,3 @@
-import Cart from '@/views/Cart.vue'
-import Checkout from '@/views/Checkout.vue'
-import HomePage from '@/views/HomePage.vue'
-import Login from '@/views/Login.vue'
-import Orders from '@/views/Orders.vue'
-import ProductDetail from '@/views/ProductDetail.vue'
-import ProductList from '@/views/ProductList.vue'
-import Register from '@/views/Register.vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
 const router = createRouter({
@@ -13,35 +5,39 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      component: HomePage,
+      component: () => import('@/views/HomePage.vue'),
     },
     {
       path: '/cart',
-      component: Cart,
+      component: () => import('@/views/Cart.vue'),
     },
     {
       path: '/login',
-      component: Login,
+      component: () => import('@/views/Login.vue'),
     },
     {
       path: '/orders',
-      component: Orders,
+      component: () => import('@/views/Orders.vue'),
     },
     {
       path: '/register',
-      component: Register,
+      component: () => import('@/views/Register.vue'),
     },
     {
       path: '/products/:id',
-      component: ProductDetail,
+      component: () => import('@/views/ProductDetail.vue'),
     },
     {
       path: '/products',
-      component: ProductList,
+      component: () => import('@/views/ProductList.vue'),
     },
     {
       path: '/checkout',
-      component: Checkout,
+      component: () => import('@/views/Checkout.vue'),
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      component: () => import('@/views/NotFound.vue'),
     },
   ],
 })

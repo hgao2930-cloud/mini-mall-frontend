@@ -12,30 +12,16 @@
 
 <script setup lang="ts">
 import { getProducts } from '@/api/products'
-import type { Product } from '@/api/products'
-import axios from 'axios'
-import { onMounted, ref } from 'vue'
+import { useAsyncData } from '@/composables/useAsyncData'
+import { computed, onMounted } from 'vue'
 
-const products = ref<Product[]>([])
-const isLoading = ref(true)
-const errMsg = ref('')
+const { data, isLoading, errMsg, load } = useAsyncData(() => getProducts())
+const products = computed(() => {
+  return data.value ?? []
+})
 
-onMounted(async () => {
-  try {
-    const res = await getProducts()
-    products.value = res.data
-  } catch (err) {
-    if (axios.isAxiosError(err)) {
-      errMsg.value = err.response
-        ? `加载失败(HTTP${err.response.status})`
-        : '网络错误,请检查网络连接'
-    } else {
-      errMsg.value = '未知错误'
-    }
-    console.error(err)
-  } finally {
-    isLoading.value = false
-  }
+onMounted(() => {
+  load()
 })
 </script>
 
