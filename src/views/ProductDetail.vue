@@ -7,6 +7,7 @@
         product?.description
       }}
       <img :src="product?.image" :alt="product?.name" />
+      <button @click="handleAddToCart">加入购物车</button>
     </div>
   </div>
 </template>
@@ -16,6 +17,7 @@ import { onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { getProduct } from '@/api/products'
 import { useAsyncData } from '@/composables/useAsyncData'
+import { useCartStore } from '@/stores/cart'
 
 const route = useRoute()
 const {
@@ -24,6 +26,13 @@ const {
   errMsg,
   load,
 } = useAsyncData(() => getProduct(route.params.id as string))
+
+const cartStore = useCartStore()
+function handleAddToCart() {
+  if (product.value) {
+    cartStore.addToCart(product.value)
+  }
+}
 
 onMounted(() => {
   load()
