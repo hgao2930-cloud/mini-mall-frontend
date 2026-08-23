@@ -9,12 +9,14 @@
     </div>
     <p>总数：{{ total.totalCount }}</p>
     <p>总价：{{ total.totalPrice }}</p>
+    <router-link to="/checkout">去结算</router-link>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useCartStore } from '@/stores/cart'
 import { storeToRefs } from 'pinia'
+import { RouterLink } from 'vue-router'
 
 const cartStore = useCartStore()
 

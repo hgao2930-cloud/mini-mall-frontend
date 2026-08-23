@@ -44,5 +44,8 @@ export const useCartStore = defineStore('cart', () => {
       decreaseItem.quantity--
     }
   }
-  return { items, total, addToCart, removeItem, increaseQuantity, decreaseQuantity }
+  function clearCart() {
+    items.value = []
+  }
+  return { items, total, addToCart, removeItem, increaseQuantity, decreaseQuantity, clearCart }
 })
