@@ -3,20 +3,24 @@
     商品：{{ item.product.name }},数量：{{ item.quantity }}，单价：{{ item.product.price }}
     <img :src="item.product.image" :alt="item.product.name" />
   </div>
-  <div>总价：{{ total.totalPrice }}</div>
-  <button :disabled="isSubmitting" @click="handleCheck">提交订单</button>
+  <div v-if="hasItem">
+    <div>总价：{{ total.totalPrice }}</div>
+    <button :disabled="isSubmitting" @click="handleCheck">提交订单</button>
+  </div>
+  <div v-else>暂无商品需要结算</div>
 </template>
 
 <script setup lang="ts">
 import { useCartStore } from '@/stores/cart'
 import { storeToRefs } from 'pinia'
 import { createOrder, type Order } from '@/api/order'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import router from '@/router'
 
 const cartStore = useCartStore()
 const { items, total } = storeToRefs(cartStore)
 const isSubmitting = ref(false)
+const hasItem = computed(() => items.value.length > 0)
 
 async function handleCheck() {
   if (isSubmitting.value) return
