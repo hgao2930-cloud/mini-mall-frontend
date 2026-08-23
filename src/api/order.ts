@@ -14,3 +14,6 @@ export const createOrder = function (data: Omit<Order, 'id'>) {
 export const getOrders = function () {
   return api.get<Order[]>('/orders')
 }
+export const payOrder = function (id: string) {
+  return api.patch(`/orders/${id}`, { status: '待发货' })
+}

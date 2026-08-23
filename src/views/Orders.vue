@@ -8,16 +8,25 @@
       </li>
       <div>状态：{{ order.status }}</div>
       <div>总价：{{ order.totalPrice }}</div>
+      <button v-if="order.status === '待付款'" @click="handlePay(order.id)">模拟支付</button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { getOrders } from '@/api/order'
+import { getOrders, payOrder } from '@/api/order'
 import { onMounted } from 'vue'
 import { useAsyncData } from '@/composables/useAsyncData'
 
 const { data: orders, isLoading, errMsg, load } = useAsyncData(getOrders)
+const handlePay = async function (id: string) {
+  try {
+    await payOrder(id)
+    await load()
+  } catch (err) {
+    console.error(err)
+  }
+}
 
 onMounted(() => load())
 </script>
