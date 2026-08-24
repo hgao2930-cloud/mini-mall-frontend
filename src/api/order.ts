@@ -9,14 +9,14 @@ export interface Order {
   createdAt: string
 }
 export const createOrder = function (data: Omit<Order, 'id'>) {
-  return api.post('/orders', data)
+  return api.post<Order>('/orders', data)
 }
 export const getOrders = function () {
   return api.get<Order[]>('/orders')
 }
 export const payOrder = function (id: string) {
-  return api.patch(`/orders/${id}`, { status: '待收货' })
+  return api.patch<Order>(`/orders/${id}`, { status: '待收货' })
 }
 export const confirmOrder = function (id: string) {
-  return api.patch(`/orders/${id}`, { status: '已完成' })
+  return api.patch<Order>(`/orders/${id}`, { status: '已完成' })
 }

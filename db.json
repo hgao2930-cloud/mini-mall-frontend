@@ -135,5 +135,17 @@
       "createdAt": "2026-08-23T09:20:33.853Z"
     }
   ],
+  "users": [
+    {
+      "username": "admin",
+      "password": "123456",
+      "id": "1R9vNx2ALV8"
+    },
+    {
+      "username": "lazy boy",
+      "password": "123456",
+      "id": "LpXOKgjSAI8"
+    }
+  ],
   "$schema": "./node_modules/json-server/schema.json"
 }
