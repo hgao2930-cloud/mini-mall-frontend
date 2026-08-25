@@ -14,12 +14,17 @@
 import { ref } from 'vue'
 import { loginUser } from '@/api/user'
 import router from '@/router'
+import { useAuthStore } from '@/stores/auth'
 
 const showPassword = ref(false)
 const user = ref({
   username: '',
   password: '',
 })
+
+const userStore = useAuthStore()
+const { login } = userStore
+
 async function handleLogin() {
   try {
     if (!user.value.username) return
@@ -29,6 +34,7 @@ async function handleLogin() {
       (u) => u.username === user.value.username && u.password === user.value.password,
     )
     if (data) {
+      login(data)
       router.push('/')
     } else {
       alert('用户名或密码输入错误')

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { Product } from '@/api/products'
 
 export interface CartItem {
@@ -7,7 +7,21 @@ export interface CartItem {
   quantity: number
 }
 export const useCartStore = defineStore('cart', () => {
-  const items = ref<CartItem[]>([])
+  const getItemsFromStorage = function (): CartItem[] {
+    try {
+      const stored = localStorage.getItem('items')
+      return stored ? JSON.parse(stored) : []
+    } catch {
+      localStorage.removeItem('items')
+      return []
+    }
+  }
+  const items = ref<CartItem[]>(getItemsFromStorage())
+
+  watch(items, (newItems) => localStorage.setItem('items', JSON.stringify(newItems)), {
+    deep: true,
+  })
+
   const total = computed(() => {
     const totalPrice = items.value.reduce(
       (sum, item) => sum + item.product.price * item.quantity,
