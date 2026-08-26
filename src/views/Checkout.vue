@@ -36,7 +36,7 @@ async function handleCheck() {
     cartStore.clearCart()
     router.push('/orders')
   } catch (err) {
-    console.log('下单失败', err)
+    console.error('下单失败', err)
     isSubmitting.value = false
   }
 }
