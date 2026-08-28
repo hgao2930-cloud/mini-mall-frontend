@@ -52,7 +52,6 @@ export const useCartStore = defineStore('cart', () => {
     const decreaseItem = items.value.find((item) => item.product.id === productID)
     if (decreaseItem) {
       if (decreaseItem.quantity === 1) {
-        removeItem(productID)
         return
       }
       decreaseItem.quantity--
@@ -61,5 +60,13 @@ export const useCartStore = defineStore('cart', () => {
   function clearCart() {
     items.value = []
   }
-  return { items, total, addToCart, removeItem, increaseQuantity, decreaseQuantity, clearCart }
+  return {
+    items,
+    total,
+    addToCart,
+    removeItem,
+    increaseQuantity,
+    decreaseQuantity,
+    clearCart,
+  }
 })
