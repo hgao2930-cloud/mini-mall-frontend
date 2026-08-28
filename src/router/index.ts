@@ -12,29 +12,36 @@ const router = createRouter({
       path: '/cart',
       component: () => import('@/views/Cart.vue'),
       meta: {
-        requiresAuth: true
-      }
+        requiresAuth: true,
+      },
     },
     {
       path: '/login',
       component: () => import('@/views/Login.vue'),
       meta: {
-        guestOnly: true
-      }
+        guestOnly: true,
+      },
     },
     {
       path: '/orders',
       component: () => import('@/views/Orders.vue'),
       meta: {
-        requiresAuth: true
-      }
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/profile',
+      component: () => import('@/views/Profile.vue'),
+      meta: {
+        requiresAuth: true,
+      },
     },
     {
       path: '/register',
       component: () => import('@/views/Register.vue'),
       meta: {
-        guestOnly: true
-      }
+        guestOnly: true,
+      },
     },
     {
       path: '/products/:id',
@@ -48,8 +55,8 @@ const router = createRouter({
       path: '/checkout',
       component: () => import('@/views/Checkout.vue'),
       meta: {
-        requiresAuth: true
-      }
+        requiresAuth: true,
+      },
     },
     {
       path: '/:pathMatch(.*)*',
@@ -64,8 +71,8 @@ router.beforeEach((to) => {
     return {
       path: '/login',
       query: {
-        redirect: to.fullPath
-      }
+        redirect: to.fullPath,
+      },
     }
   }
   if (to.meta.guestOnly && authStore.isLoggedIn) {
