@@ -52,6 +52,9 @@ import { getProducts } from '@/api/products'
 import { useAsyncData } from '@/composables/useAsyncData'
 import { computed, onMounted } from 'vue'
 import { ref } from 'vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
 
 const { data, isLoading, errMsg, load } = useAsyncData(() => getProducts())
 const products = computed(() => {
@@ -78,6 +81,9 @@ const showProducts = computed(() => {
 })
 
 onMounted(() => {
+  if (route.query.category) {
+    currentCategory.value = route.query.category as string
+  }
   load()
 })
 </script>
