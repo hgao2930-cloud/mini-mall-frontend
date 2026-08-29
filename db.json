@@ -328,6 +328,25 @@
       "status": "已完成",
       "createdAt": "2026-08-28T13:55:56.948Z",
       "id": "1P-jgksL9Sc"
+    },
+    {
+      "items": [
+        {
+          "product": {
+            "id": "3",
+            "name": "iPhone 14 Pro Max",
+            "price": 6999,
+            "image": "https://picsum.photos/300/300?random=3",
+            "description": "灵动岛设计，4800万像素摄像系统",
+            "category": "手机"
+          },
+          "quantity": 2
+        }
+      ],
+      "totalPrice": 13998,
+      "status": "待收货",
+      "createdAt": "2026-08-29T16:15:47.457Z",
+      "id": "nXa1al59Trk"
     }
   ],
   "users": [
