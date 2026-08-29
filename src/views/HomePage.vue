@@ -6,6 +6,7 @@
     </div>
     <div class="section">
       <div v-if="isLoading" class="loading">加载中</div>
+      <div v-else-if="errMsg" class="error">{{ errMsg }}</div>
       <div v-else-if="!products" class="empty">暂无推荐</div>
       <div v-else>
         <h2 class="section-title">热门推荐</h2>
@@ -28,24 +29,17 @@
 <script setup lang="ts">
 import { useAuthStore } from '@/stores/auth'
 import { storeToRefs } from 'pinia'
-import { getProducts, type Product } from '@/api/products'
-import { computed, onMounted, ref } from 'vue'
+import { getProducts } from '@/api/products'
+import { computed, onMounted } from 'vue'
+import { useAsyncData } from '@/composables/useAsyncData'
 
-const isLoading = ref(true)
 const authStore = useAuthStore()
 const { user, isLoggedIn } = storeToRefs(authStore)
-const data = ref<Product[]>()
+const { data, isLoading, errMsg, load } = useAsyncData(() => getProducts())
 const products = computed(() => data.value?.slice(0, 4))
-onMounted(async () => {
-  try {
-    isLoading.value = true
-    const res = await getProducts()
-    data.value = res.data
-  } catch (err) {
-    console.error(err)
-  } finally {
-    isLoading.value = false
-  }
+
+onMounted(() => {
+  load()
 })
 </script>
 
@@ -117,10 +111,15 @@ onMounted(async () => {
 
 /* ===== 加载/空状态 ===== */
 .loading,
-.empty {
+.empty,
+.error {
   padding: 60px 0;
   color: var(--color-text-secondary);
   font-size: 15px;
+}
+
+.error {
+  color: var(--color-danger);
 }
 
 /* ===== 商品网格 ===== */

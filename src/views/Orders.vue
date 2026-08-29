@@ -35,16 +35,18 @@
             <button
               v-if="order.status === '待付款'"
               class="btn btn-primary"
+              :disabled="payingId === order.id"
               @click="handlePay(order.id)"
             >
-              模拟支付
+              {{ payingId === order.id ? '支付中...' : '模拟支付' }}
             </button>
             <button
               v-if="order.status === '待收货'"
               class="btn btn-success"
+              :disabled="confirmingId === order.id"
               @click="handleConfirm(order.id)"
             >
-              确认收货
+              {{ confirmingId === order.id ? '确认中...' : '确认收货' }}
             </button>
           </div>
         </div>
@@ -55,7 +57,7 @@
 
 <script setup lang="ts">
 import { getOrders, payOrder, confirmOrder } from '@/api/order'
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useAsyncData } from '@/composables/useAsyncData'
 import { ElMessage } from 'element-plus'
 import { RouterLink } from 'vue-router'
@@ -82,24 +84,33 @@ function statusClass(status: string) {
 }
 
 const handlePay = async function (id: string) {
+  payingId.value = id
   try {
     await payOrder(id)
     await load()
     ElMessage.success('支付成功')
   } catch {
     ElMessage.error('支付失败，请稍后重试')
+  } finally {
+    payingId.value = ''
   }
 }
 
 const handleConfirm = async function (id: string) {
+  confirmingId.value = id
   try {
     await confirmOrder(id)
     await load()
     ElMessage.success('收货确认成功')
   } catch {
     ElMessage.error('确认收货失败，请稍后重试')
+  } finally {
+    confirmingId.value = ''
   }
 }
+
+const payingId = ref('')
+const confirmingId = ref('')
 
 onMounted(() => load())
 </script>

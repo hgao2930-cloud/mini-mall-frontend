@@ -101,6 +101,8 @@ async function handleCheck() {
   } catch {
     ElMessage.error('下单失败，请稍后重试')
     isSubmitting.value = false
+  } finally {
+    isSubmitting.value = false
   }
 }
 </script>
