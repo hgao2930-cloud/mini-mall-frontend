@@ -25,11 +25,11 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { loginUser } from '@/api/user'
 import router from '@/router/index'
 import { useAuthStore } from '@/stores/auth'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { getApiErrorMessage } from '@/api'
 
 const user = ref({
   username: '',
@@ -43,8 +43,7 @@ const rules = {
 const route = useRoute()
 const redirect = route.query.redirect as string | undefined
 
-const userStore = useAuthStore()
-const { login } = userStore
+const authStore = useAuthStore()
 
 async function handleLogin() {
   try {
@@ -52,19 +51,11 @@ async function handleLogin() {
       ElMessage.warning('请输入用户名和密码')
       return
     }
-    const res = await loginUser()
-    const data = res.data.find(
-      (u) => u.username === user.value.username && u.password === user.value.password,
-    )
-    if (data) {
-      login(data)
-      ElMessage.success('登录成功')
-      router.push(redirect ?? '/')
-    } else {
-      ElMessage.warning('用户名或密码输入错误')
-    }
-  } catch {
-    ElMessage.error('登录失败，请稍后重试')
+    await authStore.login(user.value.username, user.value.password)
+    ElMessage.success('登录成功')
+    router.push(redirect ?? '/')
+  } catch (err) {
+    ElMessage.error(getApiErrorMessage(err))
   }
 }
 </script>

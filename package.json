@@ -12,8 +12,7 @@
     "lint": "run-s \"lint:*\"",
     "lint:oxlint": "oxlint . --fix",
     "lint:eslint": "eslint . --fix --cache",
-    "format": "prettier --write --experimental-cli src/",
-    "mock": "json-server db.json --port 3000"
+    "format": "prettier --write --experimental-cli src/"
   },
   "dependencies": {
     "axios": "^1.19.0",
@@ -33,7 +32,6 @@
     "eslint-plugin-oxlint": "~1.73.0",
     "eslint-plugin-vue": "~10.9.2",
     "jiti": "^2.7.0",
-    "json-server": "^1.0.0-beta.15",
     "npm-run-all2": "^9.0.2",
     "oxlint": "~1.73.0",
     "prettier": "3.9.5",

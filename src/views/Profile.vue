@@ -99,7 +99,9 @@ import { storeToRefs } from 'pinia'
 import { ElMessage } from 'element-plus'
 
 const { user } = storeToRefs(useAuthStore())
-const { userInfo, isFilled, updateInfo } = useUserInfoStore()
+const userInfoStore = useUserInfoStore()
+const { userInfo } = storeToRefs(userInfoStore)
+const { isFilled, updateInfo, loadInfo } = userInfoStore
 
 const dialogVisible = ref(false)
 const form = ref({ name: '', phone: '', address: '' })
@@ -110,7 +112,7 @@ const shippingCount = ref(0)
 const doneCount = ref(0)
 
 function openDialog() {
-  form.value = { ...userInfo }
+  form.value = { ...userInfo.value }
   dialogVisible.value = true
 }
 
@@ -125,6 +127,7 @@ function handleSave() {
 }
 
 onMounted(async () => {
+  loadInfo()
   try {
     const res = await getOrders()
     const orders = res.data

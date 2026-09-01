@@ -3,19 +3,17 @@ import api from '.'
 export interface User {
   id: string
   username: string
-  password: string
 }
-export const registerUser = function (user: Omit<User, 'id'>) {
-  return api.post<User>('/users', user)
+
+export interface AuthResponse {
+  token: string
+  user: User
 }
-// export const loginUser = function(user:Omit<User, 'id'>){
-//     return api.get<User[]>('/users',{
-//         params:{
-//             username:user.username,
-//             password:user.password
-//         }
-//     })
-// }
-export const loginUser = function () {
-  return api.get<User[]>('/users')
+
+export const registerUser = function (data: { username: string; password: string }) {
+    return api.post<AuthResponse>('/auth/register',data)
+}
+
+export const loginUser = function (data: { username: string; password: string }) {
+  return api.post<AuthResponse>('/auth/login',data)
 }

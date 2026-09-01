@@ -69,16 +69,22 @@ import { useCartStore } from '@/stores/cart'
 import { useUserInfoStore } from '@/stores/userinfo'
 import { storeToRefs } from 'pinia'
 import { createOrder, type Order } from '@/api/order'
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import router from '@/router'
 import { ElMessage } from 'element-plus'
 import { RouterLink } from 'vue-router'
 
 const cartStore = useCartStore()
 const { items, total } = storeToRefs(cartStore)
-const { userInfo, isFilled } = useUserInfoStore()
+const userInfoStore = useUserInfoStore()
+const { userInfo } = storeToRefs(userInfoStore)
+const { isFilled, loadInfo } = userInfoStore
 const isSubmitting = ref(false)
 const hasItem = computed(() => items.value.length > 0)
+
+onMounted(() => {
+  loadInfo()
+})
 
 async function handleCheck() {
   if (isSubmitting.value) return

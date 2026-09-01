@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import api from '@/api'
 
 export interface UserInfo {
   name: string
@@ -28,7 +29,20 @@ export const useUserInfoStore = defineStore('userinfo', () => {
   function updateInfo(data: UserInfo) {
     userInfo.value = { ...data }
     localStorage.setItem(USERINFO_KEY, JSON.stringify(userInfo.value))
+    api.put('/profile', userInfo.value).catch(() => {
+      // 后端暂不可用时保留本地缓存
+    })
   }
 
-  return { userInfo, isFilled, updateInfo }
+  async function loadInfo() {
+    try {
+      const res = await api.get<UserInfo>('/profile')
+      userInfo.value = { ...DEFAULT_INFO, ...res.data }
+      localStorage.setItem(USERINFO_KEY, JSON.stringify(userInfo.value))
+    } catch {
+      // 未登录或请求失败时保留本地缓存
+    }
+  }
+
+  return { userInfo, isFilled, updateInfo, loadInfo }
 })

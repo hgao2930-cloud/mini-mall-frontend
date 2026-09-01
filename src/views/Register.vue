@@ -24,10 +24,11 @@
 </template>
 
 <script setup lang="ts">
-import { registerUser } from '@/api/user'
 import { ref } from 'vue'
 import router from '@/router'
+import { useAuthStore } from '@/stores/auth'
 import { ElMessage } from 'element-plus'
+import { getApiErrorMessage } from '@/api'
 
 const user = ref({
   username: '',
@@ -35,8 +36,13 @@ const user = ref({
 })
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+  password: [
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { min: 6, message: '密码至少 6 位', trigger: 'blur' },
+  ],
 }
+
+const authStore = useAuthStore()
 
 async function handleRegister() {
   try {
@@ -44,11 +50,11 @@ async function handleRegister() {
       ElMessage.warning('请输入用户名和密码')
       return
     }
-    await registerUser(user.value)
-    ElMessage.success('注册成功，请登录')
-    router.push('/login')
-  } catch {
-    ElMessage.error('注册失败，请稍后重试')
+    await authStore.register(user.value.username, user.value.password)
+    ElMessage.success('注册成功')
+    router.push('/')
+  } catch (err) {
+    ElMessage.error(getApiErrorMessage(err))
   }
 }
 </script>
