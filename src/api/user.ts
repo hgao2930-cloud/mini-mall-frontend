@@ -6,7 +6,7 @@ export interface User {
 }
 
 export interface AuthResponse {
-  token: string
+  token?: string
   user: User
 }
 
@@ -16,4 +16,7 @@ export const registerUser = function (data: { username: string; password: string
 
 export const loginUser = function (data: { username: string; password: string }) {
   return api.post<AuthResponse>('/auth/login',data)
+}
+export const logOut = function(){
+  return api.post('/auth/logout')
 }
