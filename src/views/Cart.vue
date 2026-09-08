@@ -15,18 +15,16 @@
           <div class="cart-item-price">¥{{ item.product.price }}</div>
         </div>
         <div class="quantity-control">
-          <button
-            class="qty-btn"
-            :disabled="item.quantity <= 1"
-            @click="cartStore.decreaseQuantity(item.product.id)"
-          >
+          <button class="qty-btn" :disabled="item.quantity <= 1 || loading === item.product.id"
+            @click="decreaseQuantity(item.product.id)">
             -
           </button>
           <span class="qty-num">{{ item.quantity }}</span>
-          <button class="qty-btn" @click="cartStore.increaseQuantity(item.product.id)">+</button>
+          <button class="qty-btn" :disabled="loading === item.product.id"
+            @click="increaseQuantity(item.product.id)">+</button>
         </div>
         <div class="cart-item-subtotal">¥{{ item.product.price * item.quantity }}</div>
-        <button class="cart-item-delete" @click="cartStore.removeItem(item.product.id)">
+        <button class="cart-item-delete" :disabled="loading===item.product.id" @click="removeItem(item.product.id)">
           删除
         </button>
       </div>
@@ -46,9 +44,14 @@
 import { useCartStore } from '@/stores/cart'
 import { storeToRefs } from 'pinia'
 import { RouterLink } from 'vue-router'
+import { useAsyncAction } from '@/composables/useAsyncAction'
 
 const cartStore = useCartStore()
 const { items, total } = storeToRefs(cartStore)
+const { loading, handleAction } = useAsyncAction()
+const decreaseQuantity = (id: string) => handleAction(() => cartStore.decreaseQuantity(id), id)
+const increaseQuantity = (id:string) => handleAction(()=>cartStore.increaseQuantity(id),id)
+const removeItem = (id:string) => handleAction(()=>cartStore.removeItem(id),id)
 </script>
 
 <style scoped>

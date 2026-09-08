@@ -1,4 +1,4 @@
-import { loginUser, logOut, registerUser, type User } from '@/api/user'
+import { getMe, loginUser, logOut, registerUser, type User } from '@/api/user'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
@@ -7,6 +7,16 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(getUserFromStorage())
   const isLoggedIn = computed(() => !!user.value)
 
+  async function init() {
+    localStorage.removeItem(USER_KEY)
+    const res = await getMe()
+    if (!res.data.user) {
+      user.value = null
+      return
+    }
+    user.value = res.data.user
+    localStorage.setItem(USER_KEY, JSON.stringify(res.data.user))
+  }
   function getUserFromStorage(): User | null {
     try {
       const stored = localStorage.getItem(USER_KEY)
@@ -17,14 +27,12 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // TODO(练习)：调 loginUser()，成功后保存 user（token 按方案 A 存 localStorage 或方案 B 交给 cookie）
   async function login(username: string, password: string) {
     const res = await loginUser({ username, password })
     user.value = res.data.user
     localStorage.setItem(USER_KEY, JSON.stringify(res.data.user))
   }
 
-  // TODO(练习)：调 registerUser()，成功后保存 user
   async function register(username: string, password: string) {
     const res = await registerUser({ username, password })
     user.value = res.data.user
@@ -43,5 +51,5 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.removeItem(USER_KEY)
     }
   }
-  return { user, isLoggedIn, login, register, logout }
+  return { user, isLoggedIn, login, register, logout, init }
 })

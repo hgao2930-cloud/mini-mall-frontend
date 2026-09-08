@@ -20,3 +20,6 @@ export const loginUser = function (data: { username: string; password: string })
 export const logOut = function(){
   return api.post('/auth/logout')
 }
+export const getMe = function(){
+  return api.get('/auth/me')
+}
