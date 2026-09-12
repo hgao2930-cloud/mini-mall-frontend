@@ -27,6 +27,7 @@
 import { ref } from 'vue'
 import router from '@/router/index'
 import { useAuthStore } from '@/stores/auth'
+import { useCartStore } from '@/stores/cart'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getApiErrorMessage } from '@/api'
@@ -44,6 +45,7 @@ const route = useRoute()
 const redirect = route.query.redirect as string | undefined
 
 const authStore = useAuthStore()
+const cartStore = useCartStore()
 
 async function handleLogin() {
   try {
@@ -52,6 +54,7 @@ async function handleLogin() {
       return
     }
     await authStore.login(user.value.username, user.value.password)
+    await cartStore.init()
     ElMessage.success('登录成功')
     router.push(redirect ?? '/')
   } catch (err) {

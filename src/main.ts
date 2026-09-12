@@ -17,8 +17,8 @@ const cartStore = useCartStore()
 async function initApp() {
     await userStore.init()
     await cartStore.init()
-    app.use(router)
-    app.use(ElementPlus)
-    app.mount('#app')
 }
 initApp()
+app.use(router)
+app.use(ElementPlus)
+app.mount('#app')

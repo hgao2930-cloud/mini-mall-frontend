@@ -1,5 +1,10 @@
 import api from ".";
-import { type CartItem } from "@/stores/cart";
+import type { Product } from "@/api/products";
+
+export interface CartItem {
+  product: Product
+  quantity: number
+}
 
 export const getCartItem = function(){
     return api.get<CartItem[]>('/cart')

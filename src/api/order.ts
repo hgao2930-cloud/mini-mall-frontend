@@ -1,5 +1,5 @@
 import api from './index'
-import type { CartItem } from '@/stores/cart'
+import type { CartItem } from '@/api/cart'
 
 export interface Order {
   id: string

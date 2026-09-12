@@ -1,6 +1,7 @@
 import { getMe, loginUser, logOut, registerUser, type User } from '@/api/user'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import { handleError } from '@/utils/error'
 
 export const useAuthStore = defineStore('auth', () => {
   const USER_KEY = 'user'
@@ -8,14 +9,19 @@ export const useAuthStore = defineStore('auth', () => {
   const isLoggedIn = computed(() => !!user.value)
 
   async function init() {
-    localStorage.removeItem(USER_KEY)
-    const res = await getMe()
-    if (!res.data.user) {
-      user.value = null
-      return
+    try {
+      localStorage.removeItem(USER_KEY)
+      const res = await getMe()
+      if (!res.data.user) {
+        user.value = null
+        return
+      }
+      user.value = res.data.user
+      localStorage.setItem(USER_KEY, JSON.stringify(res.data.user))
     }
-    user.value = res.data.user
-    localStorage.setItem(USER_KEY, JSON.stringify(res.data.user))
+    catch (err) {
+      handleError(err)
+    }
   }
   function getUserFromStorage(): User | null {
     try {

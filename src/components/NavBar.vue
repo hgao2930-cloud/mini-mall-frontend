@@ -39,6 +39,7 @@ const { total } = storeToRefs(cartStore)
 function handleLogout() {
   if (!confirm('确定退出登录吗？')) return
   userStore.logout()
+  cartStore.reset()
 }
 </script>
 

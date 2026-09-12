@@ -101,7 +101,12 @@ async function handleCheck() {
       createdAt: new Date().toISOString(),
     }
     await createOrder(order)
-    cartStore.clearCart()
+    try {
+      await cartStore.clearCart()
+    } catch {
+      // 清空失败不阻塞下单流程：本地先清空，避免残留商品被重复结算
+      cartStore.reset()
+    }
     ElMessage.success('下单成功')
     router.push('/orders')
   } catch {
