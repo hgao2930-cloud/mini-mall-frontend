@@ -1,29 +1,16 @@
 <template>
   <div class="product-list-page">
     <div class="search-box">
-      <input
-        v-model="searchText"
-        placeholder="搜索商品..."
-        @focus="isFocused = true"
-        @blur="isFocused = false"
-      />
+      <input v-model="searchText" placeholder="搜索商品..." @focus="isFocused = true" @blur="isFocused = false" />
       <ul v-show="suggestions.length && isFocused" class="suggestions">
-        <li
-          v-for="item in suggestions"
-          :key="item.id"
-          @mousedown.prevent="selectSuggestion(item.name)"
-        >
+        <li v-for="item in suggestions" :key="item.id" @mousedown.prevent="selectSuggestion(item.name)">
           {{ item.name }}
         </li>
       </ul>
     </div>
     <div class="category-bar">
-      <button
-        v-for="cat in categories"
-        :key="cat"
-        :class="{ active: currentCategory === cat }"
-        @click="currentCategory = cat"
-      >
+      <button v-for="cat in categories" :key="cat" :class="{ active: (cat === '全部' ? '' : cat) === currentCategory }"
+        @click="currentCategory = cat === '全部' ? '' : cat">
         {{ cat }}
       </button>
     </div>
@@ -44,47 +31,111 @@
         </RouterLink>
       </div>
     </div>
+    <div ref="loadMoreTrigger"></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { getProducts } from '@/api/products'
+import { getProducts, getCategory, type Product } from '@/api/products'
 import { useAsyncData } from '@/composables/useAsyncData'
-import { computed, onMounted } from 'vue'
+import { debounce } from '@/composables/debounce'
+import { computed, onMounted, onUnmounted, watch } from 'vue'
 import { ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { handleError } from '@/utils/error'
 
-const route = useRoute()
-
-const { data, isLoading, errMsg, load } = useAsyncData(() => getProducts())
-const products = computed(() => {
-  return data.value ?? []
-})
 const searchText = ref('')
 const isFocused = ref(false)
-const suggestions = computed(() => {
-  if (!searchText.value) return []
-  return products.value.filter((p) => p.name.includes(searchText.value)).slice(0, 5)
+const currentCategory = ref('')
+const hasMore = ref(true)
+const isLoadMore = ref(false)
+const route = useRoute()
+const page = ref(1)
+const pageSize = 16
+const loadMoreTrigger = ref<HTMLElement | null>(null)
+let observer: IntersectionObserver | null = null
+const resetPage = function () {
+  page.value = 1
+  hasMore.value = true
+}
+const { data: categoriesData, isLoading: categoriesIsLoading, errMsg: categoriesErrMsg, load: loadCategories } = useAsyncData(() => getCategory())
+const { data, isLoading, errMsg, load } = useAsyncData(() => getProducts({ pageSize, page: page.value, keyword: searchText.value, category: currentCategory.value }))
+const showProducts = computed(() => {
+  return data.value?.products ?? []
 })
-function selectSuggestion(name: string) {
+const categories = computed(() => ['全部', ...categoriesData.value?.categories ?? []])
+const suggestions = ref<Product[]>([])
+const changeSearchText = async function (value: string) {
+  const res = await getProducts({ keyword: value, pageSize: 5, page: 1 })
+  suggestions.value = res.data.products
+}
+const debounced = debounce(changeSearchText, 200)
+
+watch(searchText, (newVal) => {
+  if (!newVal) {
+    suggestions.value = []
+    resetPage()
+    load()
+    debounced.cancel()
+    return
+  }
+  debounced(newVal)
+})
+
+async function selectSuggestion(name: string) {
+  resetPage()
   searchText.value = name
   isFocused.value = false
+  await load()
 }
-const categories = computed(() => {
-  const cat = [...new Set(products.value.map((p) => p.category))]
-  return ['全部', ...cat]
+
+watch(currentCategory, async (newVal) => {
+  resetPage()
+  await load()
 })
-const currentCategory = ref('全部')
-const showProducts = computed(() => {
-  if (currentCategory.value === '全部') return products.value
-  return products.value.filter((p) => p.category === currentCategory.value)
-})
+const loadMore = async function () {
+  if (isLoading.value || isLoadMore.value || !hasMore.value) return
+  isLoadMore.value = true
+  try {
+    const res = await getProducts({ pageSize, page: page.value + 1, keyword: searchText.value, category: currentCategory.value })
+    if (data.value) {
+      data.value.products.push(...res.data.products)
+      page.value++
+    }
+    hasMore.value = res.data.hasMore
+  }
+  catch (err) {
+    handleError(err)
+  }
+  finally {
+    isLoadMore.value = false
+  }
+}
 
 onMounted(() => {
   if (route.query.category) {
     currentCategory.value = route.query.category as string
   }
-  load()
+  else {
+    load()
+  }
+  loadCategories()
+  observer = new IntersectionObserver((entries) => {
+    const entry = entries[0]
+    if (entry?.isIntersecting) {
+      loadMore()
+    }
+  }, {
+    rootMargin: '300px'
+  })
+  if (loadMoreTrigger.value) {
+    observer.observe(loadMoreTrigger.value)
+  }
+})
+
+onUnmounted(() => {
+  debounced.cancel()
+  observer?.disconnect()
 })
 </script>
 

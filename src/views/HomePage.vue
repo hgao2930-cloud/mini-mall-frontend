@@ -7,7 +7,7 @@
     <div class="section">
       <div v-if="isLoading" class="loading">加载中</div>
       <div v-else-if="errMsg" class="error">{{ errMsg }}</div>
-      <div v-else-if="!products" class="empty">暂无推荐</div>
+      <div v-else-if="!products?.length" class="empty">暂无推荐</div>
       <div v-else>
         <h2 class="section-title">热门推荐</h2>
         <div class="top-grid">
@@ -29,14 +29,14 @@
 <script setup lang="ts">
 import { useAuthStore } from '@/stores/auth'
 import { storeToRefs } from 'pinia'
-import { getProducts } from '@/api/products'
-import { computed, onMounted } from 'vue'
+import { getHotProducts } from '@/api/products'
+import { computed ,onMounted } from 'vue'
 import { useAsyncData } from '@/composables/useAsyncData'
 
 const authStore = useAuthStore()
 const { user, isLoggedIn } = storeToRefs(authStore)
-const { data, isLoading, errMsg, load } = useAsyncData(() => getProducts())
-const products = computed(() => data.value?.slice(0, 4))
+const { data, isLoading, errMsg, load } = useAsyncData(() => getHotProducts())
+const products = computed(()=>data.value?.products)
 
 onMounted(() => {
   load()

@@ -42,15 +42,10 @@
       </div>
 
       <!-- 猜你喜欢 -->
-      <div v-if="relatedProducts.length" class="related-section">
+      <div v-if="recommendations?.length" class="related-section">
         <h2 class="section-title">猜你喜欢</h2>
         <div class="related-grid">
-          <RouterLink
-            v-for="item in relatedProducts"
-            :key="item.id"
-            :to="`/products/${item.id}`"
-            class="related-card"
-          >
+          <RouterLink v-for="item in recommendations" :key="item.id" :to="`/products/${item.id}`" class="related-card">
             <img :src="item.image" :alt="item.name" class="related-image" />
             <div class="related-body">
               <div class="related-name">{{ item.name }}</div>
@@ -66,38 +61,32 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
-import { getProduct, getProducts } from '@/api/products'
+import { getProduct, getRecommendations } from '@/api/products'
 import { useAsyncData } from '@/composables/useAsyncData'
 import { useCartStore } from '@/stores/cart'
 import { ElMessage } from 'element-plus'
+import { handleError } from '@/utils/error'
 
 const route = useRoute()
-const {
-  data: product,
-  isLoading,
-  errMsg,
-  load,
-} = useAsyncData(() => getProduct(route.params.id as string))
+const { data, isLoading, errMsg, load, } = useAsyncData(() => getProduct(route.params.id as string))
+const product = computed(()=>data.value?.product)
 
 const quantity = ref(1)
 
 const cartStore = useCartStore()
-function handleAddToCart() {
-  if (product.value) {
-    cartStore.addToCart(product.value, quantity.value)
+async function handleAddToCart() {
+  if (!product.value) return
+  try {
+    await cartStore.addToCart(product.value, quantity.value)
     ElMessage.success(`已加入购物车 ×${quantity.value}`)
+  } catch (err) {
+    handleError(err)
   }
 }
 
-const { data: allProducts, load: loadAll } = useAsyncData(() => getProducts())
+const { data: allProducts, load: loadAll } = useAsyncData(() => getRecommendations(route.params.id as string))
+const recommendations = computed(()=>allProducts.value?.products)
 
-const relatedProducts = computed(() => {
-  if (!product.value || !allProducts.value) return []
-  return allProducts.value
-    .filter(p => p.category === product.value!.category && p.id !== product.value!.id)
-    .sort(() => Math.random() - 0.5)
-    .slice(0, 4)
-})
 
 onMounted(() => {
   load()
@@ -107,6 +96,7 @@ onMounted(() => {
 watch(() => route.params.id, (newId) => {
   if (newId) {
     load()
+    loadAll()
     quantity.value = 1
   }
 })
