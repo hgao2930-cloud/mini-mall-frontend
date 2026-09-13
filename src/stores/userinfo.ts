@@ -26,12 +26,10 @@ export const useUserInfoStore = defineStore('userinfo', () => {
   const userInfo = ref<UserInfo>(loadFromStorage())
   const isFilled = () => !!(userInfo.value.name && userInfo.value.phone && userInfo.value.address)
 
-  function updateInfo(data: UserInfo) {
-    userInfo.value = { ...data }
+  async function updateInfo(data: UserInfo) {
+    const res = await api.put<UserInfo>('/profile', data)
+    userInfo.value = { ...DEFAULT_INFO, ...res.data }
     localStorage.setItem(USERINFO_KEY, JSON.stringify(userInfo.value))
-    api.put('/profile', userInfo.value).catch(() => {
-      // 后端暂不可用时保留本地缓存
-    })
   }
 
   async function loadInfo() {

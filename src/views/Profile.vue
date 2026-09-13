@@ -71,32 +71,34 @@
 
     <!-- 编辑弹窗 -->
     <el-dialog v-model="dialogVisible" title="修改收货信息" width="420px">
-      <el-form :model="form" label-position="top">
-        <el-form-item label="收货人">
+      <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
+        <el-form-item label="收货人" prop="name">
           <el-input v-model="form.name" placeholder="请输入收货人姓名" />
         </el-form-item>
-        <el-form-item label="电话">
+        <el-form-item label="电话" prop="phone">
           <el-input v-model="form.phone" placeholder="请输入联系电话" />
         </el-form-item>
-        <el-form-item label="地址">
+        <el-form-item label="地址" prop="address">
           <el-input v-model="form.address" type="textarea" :rows="2" placeholder="请输入收货地址" />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSave">保存</el-button>
+        <el-button type="primary" :loading="isSaving" @click="handleSave">保存</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { nextTick, onMounted, ref } from 'vue'
+import type { FormInstance, FormRules } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
 import { useUserInfoStore } from '@/stores/userinfo'
 import { getOrders } from '@/api/order'
 import { storeToRefs } from 'pinia'
 import { ElMessage } from 'element-plus'
+import { getApiErrorMessage } from '@/api/index'
 
 const { user } = storeToRefs(useAuthStore())
 const userInfoStore = useUserInfoStore()
@@ -104,26 +106,51 @@ const { userInfo } = storeToRefs(userInfoStore)
 const { isFilled, updateInfo, loadInfo } = userInfoStore
 
 const dialogVisible = ref(false)
+const formRef = ref<FormInstance>()
+const isSaving = ref(false)
 const form = ref({ name: '', phone: '', address: '' })
+
+// 与后端 routes/profile.js 的 validateProfile 规则保持一致
+const rules: FormRules = {
+  name: [
+    { required: true, message: '请输入收货人姓名', trigger: 'blur' },
+    { min: 2, max: 20, message: '姓名长度需为 2-20 个字符', trigger: 'blur' },
+  ],
+  phone: [
+    { required: true, message: '请输入联系电话', trigger: 'blur' },
+    { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur' },
+  ],
+  address: [
+    { required: true, message: '请输入收货地址', trigger: 'blur' },
+    { min: 5, max: 100, message: '地址长度需为 5-100 个字符', trigger: 'blur' },
+  ],
+}
 
 const orderCount = ref(0)
 const pendingCount = ref(0)
 const shippingCount = ref(0)
 const doneCount = ref(0)
 
-function openDialog() {
+async function openDialog() {
   form.value = { ...userInfo.value }
   dialogVisible.value = true
+  await nextTick()
+  formRef.value?.clearValidate()
 }
 
-function handleSave() {
-  if (!form.value.name || !form.value.phone || !form.value.address) {
-    ElMessage.warning('请填写完整的收货信息')
-    return
+async function handleSave() {
+  const valid = await formRef.value?.validate().catch(() => false)
+  if (!valid) return
+  isSaving.value = true
+  try {
+    await updateInfo({ ...form.value })
+    dialogVisible.value = false
+    ElMessage.success('收货信息已保存')
+  } catch (err) {
+    ElMessage.error(getApiErrorMessage(err))
+  } finally {
+    isSaving.value = false
   }
-  updateInfo(form.value)
-  dialogVisible.value = false
-  ElMessage.success('收货信息已保存')
 }
 
 onMounted(async () => {
