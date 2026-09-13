@@ -28,6 +28,7 @@ export interface Product {
   image: string
   description: string
   category: string
+  stock: number
 }
 export const getProduct = function (id: string) {
   return api.get<ProductResponse>(`/products/${id}`)

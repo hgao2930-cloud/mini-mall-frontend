@@ -18,7 +18,9 @@
     <div v-else-if="errMsg" class="error">{{ errMsg }}</div>
     <div v-else-if="showProducts.length === 0" class="empty">没有找到匹配的商品</div>
     <div v-else class="product-grid">
-      <div v-for="product in showProducts" :key="product.id" class="product-card">
+      <div v-for="product in showProducts" :key="product.id" class="product-card"
+        :class="{ 'is-sold-out': product.stock <= 0 }">
+        <span v-if="product.stock <= 0" class="sold-out-badge">已售罄</span>
         <RouterLink :to="`/products/${product.id}`" class="card-link">
           <img :src="product.image" :alt="product.name" class="card-image" />
           <div class="card-body">
@@ -249,6 +251,7 @@ onUnmounted(() => {
 }
 
 .product-card {
+  position: relative;
   background: var(--color-bg-white);
   border-radius: var(--border-radius);
   overflow: hidden;
@@ -269,6 +272,24 @@ onUnmounted(() => {
   width: 100%;
   aspect-ratio: 1;
   object-fit: cover;
+}
+
+.product-card.is-sold-out .card-image {
+  filter: grayscale(0.5);
+  opacity: 0.55;
+}
+
+.sold-out-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+  padding: 2px 10px;
+  font-size: 12px;
+  line-height: 18px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 10px;
 }
 
 .product-card .card-body {

@@ -11,7 +11,9 @@
       <div v-else>
         <h2 class="section-title">热门推荐</h2>
         <div class="top-grid">
-          <div v-for="product in products" :key="product.id" class="top-card">
+          <div v-for="product in products" :key="product.id" class="top-card"
+            :class="{ 'is-sold-out': product.stock <= 0 }">
+            <span v-if="product.stock <= 0" class="sold-out-badge">已售罄</span>
             <router-link :to="`/products/${product.id}`">
               <img :src="product.image" :alt="product.name" />
               <p>{{ product.name }}</p>
@@ -130,6 +132,7 @@ onMounted(() => {
 }
 
 .top-card {
+  position: relative;
   background: var(--color-bg-white);
   border-radius: var(--border-radius);
   overflow: hidden;
@@ -153,6 +156,24 @@ onMounted(() => {
   width: 100%;
   aspect-ratio: 1;
   object-fit: cover;
+}
+
+.top-card.is-sold-out img {
+  filter: grayscale(0.5);
+  opacity: 0.55;
+}
+
+.sold-out-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+  padding: 2px 10px;
+  font-size: 12px;
+  line-height: 18px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 10px;
 }
 
 .top-card p {

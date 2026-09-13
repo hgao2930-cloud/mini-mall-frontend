@@ -21,16 +21,20 @@
           <span class="product-category">{{ product.category }}</span>
           <h1 class="product-name">{{ product.name }}</h1>
           <div class="product-price">{{ product.price }}</div>
+          <div class="stock-line" :class="{ 'is-sold-out': product.stock <= 0 }">
+            {{ product.stock > 0 ? `库存 ${product.stock} 件` : '已售罄' }}
+          </div>
           <div class="quantity-row">
             <span class="quantity-label">数量</span>
             <div class="quantity-control">
-              <button :disabled="quantity <= 1" @click="quantity--">-</button>
+              <button :disabled="product.stock <= 0 || quantity <= 1" @click="quantity--">-</button>
               <span class="quantity-num">{{ quantity }}</span>
-              <button @click="quantity++">+</button>
+              <button :disabled="product.stock <= 0 || quantity >= product.stock" @click="quantity++">+</button>
             </div>
           </div>
-          <el-button type="primary" size="large" class="add-btn" @click="handleAddToCart">
-            加入购物车
+          <el-button type="primary" size="large" class="add-btn" :disabled="product.stock <= 0"
+            @click="handleAddToCart">
+            {{ product.stock > 0 ? '加入购物车' : '已售罄' }}
           </el-button>
         </div>
       </div>
@@ -45,7 +49,9 @@
       <div v-if="recommendations?.length" class="related-section">
         <h2 class="section-title">猜你喜欢</h2>
         <div class="related-grid">
-          <RouterLink v-for="item in recommendations" :key="item.id" :to="`/products/${item.id}`" class="related-card">
+          <RouterLink v-for="item in recommendations" :key="item.id" :to="`/products/${item.id}`" class="related-card"
+            :class="{ 'is-sold-out': item.stock <= 0 }">
+            <span v-if="item.stock <= 0" class="sold-out-badge">已售罄</span>
             <img :src="item.image" :alt="item.name" class="related-image" />
             <div class="related-body">
               <div class="related-name">{{ item.name }}</div>
@@ -215,6 +221,16 @@ watch(() => route.params.id, (newId) => {
   gap: 16px;
 }
 
+.stock-line {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.stock-line.is-sold-out {
+  color: var(--color-danger);
+  font-weight: 500;
+}
+
 .quantity-label {
   font-size: 14px;
   color: var(--color-text-secondary);
@@ -298,6 +314,7 @@ watch(() => route.params.id, (newId) => {
 }
 
 .related-card {
+  position: relative;
   background: var(--color-bg-white);
   border-radius: var(--border-radius);
   overflow: hidden;
@@ -315,6 +332,24 @@ watch(() => route.params.id, (newId) => {
   width: 100%;
   aspect-ratio: 1;
   object-fit: cover;
+}
+
+.related-card.is-sold-out .related-image {
+  filter: grayscale(0.5);
+  opacity: 0.55;
+}
+
+.sold-out-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+  padding: 2px 10px;
+  font-size: 12px;
+  line-height: 18px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 10px;
 }
 
 .related-body {

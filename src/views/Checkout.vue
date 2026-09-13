@@ -51,12 +51,7 @@
           共 {{ total.totalCount }} 件，合计
           <span class="checkout-total-price">¥{{ total.totalPrice }}</span>
         </div>
-        <el-button
-          type="primary"
-          size="large"
-          :disabled="isSubmitting || !isFilled()"
-          @click="handleCheck"
-        >
+        <el-button type="primary" size="large" :disabled="isSubmitting || !isFilled()" @click="handleCheck">
           提交订单
         </el-button>
       </div>
@@ -73,6 +68,7 @@ import { computed, onMounted, ref } from 'vue'
 import router from '@/router'
 import { ElMessage } from 'element-plus'
 import { RouterLink } from 'vue-router'
+import { getApiErrorMessage } from '@/api/index'
 
 const cartStore = useCartStore()
 const { items, total } = storeToRefs(cartStore)
@@ -104,13 +100,12 @@ async function handleCheck() {
     try {
       await cartStore.clearCart()
     } catch {
-      // 清空失败不阻塞下单流程：本地先清空，避免残留商品被重复结算
       cartStore.reset()
     }
     ElMessage.success('下单成功')
     router.push('/orders')
-  } catch {
-    ElMessage.error('下单失败，请稍后重试')
+  } catch (error) {
+    ElMessage.error(getApiErrorMessage(error))
     isSubmitting.value = false
   } finally {
     isSubmitting.value = false
