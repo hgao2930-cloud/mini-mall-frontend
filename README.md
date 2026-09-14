@@ -1,137 +1,96 @@
-# MiniMall 迷你商城
+# MiniMall 前端
 
-基于 Vue 3 全家桶 + Node.js + MySQL 的全栈商城项目，覆盖电商核心业务闭环：商品浏览 → 商品详情 → 购物车 → 结算下单 → 订单支付 → 确认收货。
+基于 Vue 3 + TypeScript + Vite 的迷你商城前端，覆盖「浏览商品 → 加入购物车 → 结算下单 → 订单状态流转」的完整业务闭环。
+
+- 在线预览：http://8.149.237.91
+- 配套后端：[mini-mall-server](https://github.com/hgao2930-cloud/mini-mall-server)
 
 ## 技术栈
 
-**前端**
+- Vue 3（Composition API + `<script setup>`）+ TypeScript
+- Vite：开发服务器与构建（本地通过 proxy 把 `/api` 转发到后端）
+- Vue Router 4：路由懒加载、登录守卫、404 兜底
+- Pinia：`auth` / `cart` / `userinfo` 三个 store
+- Element Plus：表单、弹窗、消息提示
+- Axios：统一请求实例、401 处理、错误信息提取
+- 工程化：ESLint + oxlint + Prettier + vue-tsc
 
-- Vue 3（Composition API + `<script setup>`）
-- TypeScript
-- Vite
-- Vue Router 4：动态路由、路由懒加载、404 兜底、登录守卫
-- Pinia：购物车 / 用户信息状态管理
-- Axios：请求实例、token 拦截器、401 统一跳转、错误信息提取
+## 功能
 
-**后端**
+### 商品
 
-- Node.js + Express：RESTful API
-- MySQL 8：users / products / orders 三张表
-- JWT 登录鉴权（bcrypt 密码加密）
-- 订单状态机在服务端校验（待付款 → 待收货 → 已完成）
-
-## 功能特性
-
-### 商品模块
-
-- 商品列表 / 详情分离，动态路由传参（`/products/:id`）
-- 统一的四态处理：加载中 / 错误 / 空数据 / 正常渲染
-- 前端搜索过滤 + 分类切换
-
-### 用户与鉴权
-
-- 注册 / 登录：bcrypt 加密存储，登录返回 JWT 并写入 **httpOnly cookie**（SameSite=Lax，防 XSS 窃取）
-- 浏览器自动携带 cookie，前端不接触 token；登出时后端清除 cookie
-- 401 统一跳转登录页
-- 路由守卫：购物车 / 订单 / 结算 / 个人中心需登录，登录页对已登录用户不开放
+- 列表页：**后端分页 + 触底加载**（IntersectionObserver 哨兵）、关键词搜索（输入防抖 + 后端建议下拉）、分类筛选（分类来自独立接口）
+- 详情页：商品信息、库存展示、猜你喜欢（同类推荐）
+- 售罄处理：库存为 0 时展示「已售罄」角标 + 图片灰化，详情页禁用加购与数量增减
 
 ### 购物车
 
-- Pinia 集中管理：加购查重合并、数量增减、单条删除、清空
-- localStorage 持久化，总件数 / 总价由 computed 实时派生
+- 数据存储在服务端 `cart` 表（用户 + 商品唯一），前端只维护展示副本
+- 支持加购（同商品自动累加）、数量增减、单条删除、清空
+- 未登录访问由路由守卫拦截
 
-### 订单模块
+### 订单
 
-- 结算下单：商品快照 + 金额提交（POST），成功后清空购物车并跳转
-- 完整订单状态机由服务端校验：
+- 结算：校验收货信息后提交订单，金额与商品快照由服务端生成
+- 库存不足时展示后端返回的具体原因（409）
+- 订单列表按状态展示操作按钮：待付款 → 待收货 → 已完成
+- 下单成功后清空购物车（接口异常时本地兜底清空，避免重复结算）
 
-```
-待付款 --[模拟支付]--> 待收货 --[确认收货]--> 已完成
-```
+### 用户与鉴权
 
-- 订单归属当前登录用户，只能操作自己的订单
-- 状态驱动按钮显隐，PATCH 局部更新 + 重新拉取列表
+- 注册 / 登录：密码由后端 bcrypt 加密，JWT 写入 **httpOnly cookie**，前端不接触 token
+- 会话恢复：应用启动时请求 `/api/auth/me`，未登录返回 `user: null` 进入游客态
+- 路由守卫：购物车 / 订单 / 结算 / 个人中心需登录；登录页对已登录用户不开放
+- 个人中心：收货信息编辑，姓名 / 手机号 / 地址前后端双重校验
+- 登出：清空本地登录态与收货信息缓存
 
-### 收货信息
+## 关键设计
 
-- 收货人 / 电话 / 地址保存在服务端，个人中心可编辑
-- 本地缓存兜底，后端不可用时不影响前端展示
+- **数据分层**：接口响应只读；页面状态（列表、页码、加载状态）独立维护；派生数据用 `computed` 生成，不在来源数据上原地修改
+- **请求竞态处理**：用请求序号（筛选代次 + 请求 ID）标记每次请求，过期响应直接丢弃，避免「滚动加载与切换筛选互相污染」「旧响应覆盖新结果」
+- **列表四态**：加载中 / 错误 / 空数据 / 正常；重新筛选时保留旧列表并显示轻量 loading
+- **401 处理**：统一拦截 401，清空本地登录态并跳转登录页
 
-### 工程化
+## 本地启动
 
-- 路由懒加载 + `/:pathMatch(.*)*` 404 页面
-- 自定义 composable `useAsyncData`：统一封装请求三态逻辑
-- ESLint + oxlint + Prettier + vue-tsc 四重检查
+前置要求：Node.js 22+；后端服务已启动（见 [mini-mall-server](https://github.com/hgao2930-cloud/mini-mall-server)）。
 
-## 快速开始
-
-前置要求：Node.js 22+、MySQL 8（本机已运行，端口 3306）。
-
-```sh
-# 1. 初始化数据库（输入你的 MySQL root 密码）
-#    注意：Windows 下不要用 PowerShell 管道导入（会转码坏中文），
-#    推荐用 MySQL Workbench / Navicat 导入，或执行下面命令：
-mysql -u root -p --default-character-set=utf8mb4 < ../mini-mall-server/schema.sql
-
-# 2. 配置后端环境变量（填入 DB_PASSWORD，JWT_SECRET 建议改成随机串）
-#    复制 ../mini-mall-server/.env.example 为 ../mini-mall-server/.env 并填写
-
-# 3. 安装前后端依赖
+```bash
 npm install
-cd ../mini-mall-server && npm install && cd ../mini-mall-frontend
-
-# 4. 启动后端 API（localhost:3000/api）
-cd ../mini-mall-server && npm run dev
-
-# 5. 另开终端启动前端（localhost:5173）
-npm run dev
+npm run dev     # http://localhost:5173
 ```
+
+开发环境下 Vite 会把 `/api` 请求代理到 `http://localhost:3000`（见 `vite.config.ts`）。
 
 ## 常用脚本
 
 | 命令 | 说明 |
 |---|---|
-| `npm run dev` | 启动前端开发服务器 |
-| `npm run build` | 类型检查 + 生产构建 |
-| `npm run lint` | ESLint + oxlint 检查 |
-| `npm run format` | Prettier 格式化 |
+| `npm run dev` | 启动开发服务器 |
+| `npm run build` | 类型检查 + 生产构建（产物在 `dist/`） |
 | `npm run type-check` | vue-tsc 类型检查 |
+| `npm run lint` | oxlint + ESLint |
+| `npm run format` | Prettier 格式化 |
 
-后端脚本在 `../mini-mall-server` 目录下执行：
+## 部署
 
-| 命令 | 说明 |
-|---|---|
-| `npm run dev` | 启动 Node + MySQL 后端 API（监听模式） |
-| `npm start` | 启动后端 API |
+本地构建后，将 `dist/` 上传到服务器的 Nginx 静态目录；Nginx 同时负责静态文件与 `/api` 反向代理：
 
-## API 一览
-
-| 方法 | 路径 | 说明 | 鉴权 |
-|---|---|---|---|
-| POST | `/api/auth/register` | 注册 | 否 |
-| POST | `/api/auth/login` | 登录，返回 JWT | 否 |
-| GET | `/api/products` | 商品列表 | 否 |
-| GET | `/api/products/:id` | 商品详情 | 否 |
-| GET | `/api/orders` | 我的订单 | 是 |
-| POST | `/api/orders` | 提交订单 | 是 |
-| PATCH | `/api/orders/:id` | 订单状态流转 | 是 |
-| GET | `/api/profile` | 收货信息 | 是 |
-| PUT | `/api/profile` | 保存收货信息 | 是 |
+```bash
+npm run build
+scp -r ./dist/* root@<服务器IP>:/var/www/minimall/
+```
 
 ## 目录结构
 
 ```
-../mini-mall-server/   # Node + Express + MySQL 后端（独立项目）
-│   ├── schema.sql     # 建库建表 + 种子数据
-│   └── src/
-│       ├── routes/    # auth / products / orders / profile
-│       ├── middleware/ # JWT 鉴权
-│       └── db.js      # MySQL 连接池
-└── src/               # Vue 前端
-    ├── api/           # axios 实例与业务接口
-    ├── components/    # 通用组件（NavBar）
-    ├── composables/   # useAsyncData 请求状态复用
-    ├── stores/        # Pinia（cart / auth / userinfo）
-    ├── views/         # 路由页面
-    └── router/        # 路由配置（懒加载）
+src/
+├── api/            # axios 实例与各模块接口（auth / products / cart / order）
+├── components/     # 通用组件（NavBar）
+├── composables/    # useAsyncData（请求三态）、debounce、useAsyncAction
+├── router/         # 路由配置与登录守卫
+├── stores/         # Pinia：auth / cart / userinfo
+├── utils/          # 错误提示工具
+├── views/          # 页面：首页 / 商品列表 / 商品详情 / 购物车 / 结算 / 订单 / 登录 / 注册 / 个人中心
+└── styles/         # 全局样式与主题变量
 ```
