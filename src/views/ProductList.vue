@@ -1,38 +1,61 @@
 <template>
   <div class="product-list-page">
     <div class="search-box">
-      <input v-model="searchText" placeholder="搜索商品..." @focus="isFocused = true" @blur="isFocused = false" />
+      <input
+        v-model="searchInput"
+        placeholder="搜索商品..."
+        @input="onSearchInput"
+        @keyup.enter="onSearchEnter"
+        @focus="isFocused = true"
+        @blur="isFocused = false"
+      />
       <ul v-show="suggestions.length && isFocused" class="suggestions">
-        <li v-for="item in suggestions" :key="item.id" @mousedown.prevent="selectSuggestion(item.name)">
+        <li
+          v-for="item in suggestions"
+          :key="item.id"
+          @mousedown.prevent="selectSuggestion(item.name)"
+        >
           {{ item.name }}
         </li>
       </ul>
     </div>
     <div class="category-bar">
-      <button v-for="cat in categories" :key="cat" :class="{ active: (cat === '全部' ? '' : cat) === currentCategory }"
-        @click="currentCategory = cat === '全部' ? '' : cat">
+      <button
+        v-for="cat in categories"
+        :key="cat"
+        :class="{ active: (cat === '全部' ? '' : cat) === category }"
+        @click="selectCategory(cat)"
+      >
         {{ cat }}
       </button>
     </div>
-    <div v-if="isLoading" class="loading">加载中</div>
+    <div v-if="isLoading && !list.length" class="loading">加载中</div>
     <div v-else-if="errMsg" class="error">{{ errMsg }}</div>
-    <div v-else-if="showProducts.length === 0" class="empty">没有找到匹配的商品</div>
-    <div v-else class="product-grid">
-      <div v-for="product in showProducts" :key="product.id" class="product-card"
-        :class="{ 'is-sold-out': product.stock <= 0 }">
-        <span v-if="product.stock <= 0" class="sold-out-badge">已售罄</span>
-        <RouterLink :to="`/products/${product.id}`" class="card-link">
-          <img :src="product.image" :alt="product.name" class="card-image" />
-          <div class="card-body">
-            <div class="card-name">{{ product.name }}</div>
-            <div class="card-price">{{ product.price }}</div>
-            <div class="card-footer">
-              <span class="card-category">{{ product.category }}</span>
+    <div v-else-if="list.length === 0" class="empty">没有找到匹配的商品</div>
+    <template v-else>
+      <div v-if="isRefreshing" class="refreshing">加载中…</div>
+      <div class="product-grid">
+        <div
+          v-for="product in showProducts"
+          :key="product.id"
+          class="product-card"
+          :class="{ 'is-sold-out': product.stock <= 0 }"
+        >
+          <span v-if="product.stock <= 0" class="sold-out-badge">已售罄</span>
+          <RouterLink :to="`/products/${product.id}`" class="card-link">
+            <img :src="product.image" :alt="product.name" class="card-image" />
+            <div class="card-body">
+              <div class="card-name">{{ product.name }}</div>
+              <div class="card-price">{{ product.price }}</div>
+              <div class="card-footer">
+                <span class="card-category">{{ product.category }}</span>
+              </div>
             </div>
-          </div>
-        </RouterLink>
+          </RouterLink>
+        </div>
       </div>
-    </div>
+    </template>
+    <div v-if="isLoadingMore" class="load-more">加载更多…</div>
     <div ref="loadMoreTrigger"></div>
   </div>
 </template>
@@ -41,104 +64,174 @@
 import { getProducts, getCategory, type Product } from '@/api/products'
 import { useAsyncData } from '@/composables/useAsyncData'
 import { debounce } from '@/composables/debounce'
-import { computed, onMounted, onUnmounted, watch } from 'vue'
-import { ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { handleError } from '@/utils/error'
 
-const searchText = ref('')
-const isFocused = ref(false)
-const currentCategory = ref('')
-const hasMore = ref(true)
-const isLoadMore = ref(false)
 const route = useRoute()
-const page = ref(1)
 const pageSize = 16
+
+// ===== 页面状态（可写，只由明确动作改变） =====
+const list = ref<Product[]>([])
+const page = ref(1)
+const hasMore = ref(true)
+const activeKeyword = ref('') // 已生效的查询条件，只有确认搜索才会变
+const category = ref('')
+const searchInput = ref('') // 输入框内容，只用于触发下拉建议
+const suggestions = ref<Product[]>([])
+const isFocused = ref(false)
+const isRefreshing = ref(false) // 重新筛选在途
+const isLoadingMore = ref(false)
+let requestSeq = 0 // 筛选代次：重新筛选时 +1，用于作废旧响应
+let listSeq = 0 // 当前列表数据对应的代次，用于判断"列表是否已是当前条件的结果"
 const loadMoreTrigger = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
-const resetPage = function () {
+
+// ===== 后端原始响应（只读，不直接渲染） =====
+const {
+  data: pageData,
+  isLoading,
+  errMsg,
+  load: loadPage,
+} = useAsyncData(() =>
+  getProducts({
+    pageSize,
+    page: page.value,
+    keyword: activeKeyword.value,
+    category: category.value,
+  }),
+)
+const { data: categoryData, load: loadCategories } = useAsyncData(() => getCategory())
+
+// ===== 派生（computed，只读） =====
+const showProducts = computed(() => list.value)
+const categories = computed(() => ['全部', ...(categoryData.value?.categories ?? [])])
+
+// ===== 重新筛选的唯一入口：所有条件变化都走这里 =====
+async function applyFilters(next: { keyword?: string; category?: string } = {}) {
+  if (next.keyword !== undefined) activeKeyword.value = next.keyword
+  if (next.category !== undefined) category.value = next.category
+  const seq = ++requestSeq
   page.value = 1
-  hasMore.value = true
-}
-const { data: categoriesData, isLoading: categoriesIsLoading, errMsg: categoriesErrMsg, load: loadCategories } = useAsyncData(() => getCategory())
-const { data, isLoading, errMsg, load } = useAsyncData(() => getProducts({ pageSize, page: page.value, keyword: searchText.value, category: currentCategory.value }))
-const showProducts = computed(() => {
-  return data.value?.products ?? []
-})
-const categories = computed(() => ['全部', ...categoriesData.value?.categories ?? []])
-const suggestions = ref<Product[]>([])
-const changeSearchText = async function (value: string) {
-  const res = await getProducts({ keyword: value, pageSize: 5, page: 1 })
-  suggestions.value = res.data.products
-}
-const debounced = debounce(changeSearchText, 200)
-
-watch(searchText, (newVal) => {
-  if (!newVal) {
-    suggestions.value = []
-    resetPage()
-    load()
-    debounced.cancel()
-    return
-  }
-  debounced(newVal)
-})
-
-async function selectSuggestion(name: string) {
-  resetPage()
-  searchText.value = name
-  isFocused.value = false
-  await load()
-}
-
-watch(currentCategory, async (newVal) => {
-  resetPage()
-  await load()
-})
-const loadMore = async function () {
-  if (isLoading.value || isLoadMore.value || !hasMore.value) return
-  isLoadMore.value = true
+  isRefreshing.value = true
   try {
-    const res = await getProducts({ pageSize, page: page.value + 1, keyword: searchText.value, category: currentCategory.value })
-    if (data.value) {
-      data.value.products.push(...res.data.products)
-      page.value++
-    }
-    hasMore.value = res.data.hasMore
+    await loadPage()
+  } finally {
+    if (seq === requestSeq) isRefreshing.value = false
   }
-  catch (err) {
+  if (seq !== requestSeq) return // 期间又改了筛选 → 丢弃
+  if (errMsg.value) return // 失败时保留旧列表
+  if (pageData.value) {
+    list.value = pageData.value.products
+    hasMore.value = pageData.value.hasMore
+    listSeq = seq // 标记列表数据属于当前代次
+  }
+}
+
+// ===== 搜索：输入只触发建议，确认后才改查询条件 =====
+const fetchSuggestions = async function (value: string) {
+  try {
+    const res = await getProducts({ keyword: value, pageSize: 5, page: 1 })
+    suggestions.value = res.data.products
+  } catch (err) {
     handleError(err)
   }
-  finally {
-    isLoadMore.value = false
+}
+const debouncedSuggest = debounce(fetchSuggestions, 200)
+
+function onSearchInput() {
+  const value = searchInput.value
+  if (!value) {
+    suggestions.value = []
+    debouncedSuggest.cancel()
+    if (activeKeyword.value !== '') applyFilters({ keyword: '' })
+    return
+  }
+  debouncedSuggest(value)
+}
+
+function onSearchEnter() {
+  isFocused.value = false
+  debouncedSuggest.cancel()
+  suggestions.value = []
+  applyFilters({ keyword: searchInput.value })
+}
+
+async function selectSuggestion(name: string) {
+  searchInput.value = name
+  isFocused.value = false
+  debouncedSuggest.cancel()
+  suggestions.value = []
+  await applyFilters({ keyword: name })
+}
+
+function selectCategory(cat: string) {
+  applyFilters({ category: cat === '全部' ? '' : cat })
+}
+
+// ===== 加载更多（只读快照，不改变筛选代次） =====
+const loadMore = async function () {
+  if (
+    !list.value.length ||
+    listSeq !== requestSeq || // 列表还不是当前条件的结果（比如上一次筛选失败）→ 不加载更多
+    isRefreshing.value ||
+    isLoadingMore.value ||
+    !hasMore.value
+  ) {
+    return
+  }
+  isLoadingMore.value = true
+  const seq = requestSeq
+  try {
+    const res = await getProducts({
+      pageSize,
+      page: page.value + 1,
+      keyword: activeKeyword.value,
+      category: category.value,
+    })
+    if (seq !== requestSeq) return // 筛选已变化 → 丢弃，不污染列表
+    list.value = [...list.value, ...res.data.products]
+    page.value++
+    hasMore.value = res.data.hasMore
+  } catch (err) {
+    handleError(err)
+  } finally {
+    isLoadingMore.value = false
   }
 }
 
 onMounted(() => {
-  if (route.query.category) {
-    currentCategory.value = route.query.category as string
-  }
-  else {
-    load()
-  }
+  applyFilters({ category: (route.query.category as string) || '' })
   loadCategories()
-  observer = new IntersectionObserver((entries) => {
-    const entry = entries[0]
-    if (entry?.isIntersecting) {
-      loadMore()
-    }
-  }, {
-    rootMargin: '300px'
-  })
+  observer = new IntersectionObserver(
+    (entries) => {
+      if (entries[0]?.isIntersecting) {
+        loadMore()
+      }
+    },
+    {
+      rootMargin: '300px',
+    },
+  )
   if (loadMoreTrigger.value) {
     observer.observe(loadMoreTrigger.value)
   }
 })
 
 onUnmounted(() => {
-  debounced.cancel()
+  debouncedSuggest.cancel()
   observer?.disconnect()
 })
+
+// 同组件内路由 query 变化（比如从别处跳到 /products?category=xxx）
+watch(
+  () => route.query.category,
+  (newCat) => {
+    const next = (newCat as string) || ''
+    if (next === category.value) return
+    applyFilters({ category: next })
+  },
+)
 </script>
 
 <style scoped>
@@ -241,6 +334,15 @@ onUnmounted(() => {
 
 .error {
   color: var(--color-danger);
+}
+
+/* 重新筛选 / 加载更多 的轻提示 */
+.refreshing,
+.load-more {
+  padding: 12px 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--color-text-secondary);
 }
 
 /* ===== 商品网格 ===== */
