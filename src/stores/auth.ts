@@ -8,18 +8,23 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(getUserFromStorage())
   const isLoggedIn = computed(() => !!user.value)
 
+  function clearUser() {
+    user.value = null
+    localStorage.removeItem(USER_KEY)
+  }
+
   async function init() {
     try {
-      localStorage.removeItem(USER_KEY)
       const res = await getMe()
       if (!res.data.user) {
-        user.value = null
+        clearUser()
         return
       }
       user.value = res.data.user
       localStorage.setItem(USER_KEY, JSON.stringify(res.data.user))
-    }
-    catch (err) {
+    } catch (err) {
+      // 校验失败时不能保留旧的登录态，否则路由守卫会误判成已登录
+      clearUser()
       handleError(err)
     }
   }
@@ -48,14 +53,11 @@ export const useAuthStore = defineStore('auth', () => {
   async function logout() {
     try {
       await logOut()
-    }
-    catch (err) {
+    } catch (err) {
       console.error(err)
-    }
-    finally {
-      user.value = null
-      localStorage.removeItem(USER_KEY)
+    } finally {
+      clearUser()
     }
   }
-  return { user, isLoggedIn, login, register, logout, init }
+  return { user, isLoggedIn, login, register, logout, init, clearUser }
 })

@@ -2,7 +2,7 @@
   <div class="register-page">
     <div class="register-card">
       <h2 class="register-title">注册</h2>
-      <el-form :model="user" :rules="rules" label-position="top">
+      <el-form ref="formRef" :model="user" :rules="rules" label-position="top">
         <el-form-item label="用户名" prop="username">
           <el-input v-model="user.username" placeholder="请输入用户名" />
         </el-form-item>
@@ -25,31 +25,35 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import type { FormInstance, FormRules } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import router from '@/router'
 import { useAuthStore } from '@/stores/auth'
-import { ElMessage } from 'element-plus'
 import { getApiErrorMessage } from '@/api'
 
 const user = ref({
   username: '',
   password: '',
 })
-const rules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+const formRef = ref<FormInstance>()
+// 与后端 routes/auth.js 的校验规则保持一致
+const rules: FormRules = {
+  username: [
+    { required: true, message: '请输入用户名', trigger: 'blur' },
+    { min: 2, max: 20, message: '用户名需为 2-20 个字符', trigger: 'blur' },
+  ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, message: '密码至少 6 位', trigger: 'blur' },
+    { min: 6, max: 64, message: '密码需为 6-64 位', trigger: 'blur' },
   ],
 }
 
 const authStore = useAuthStore()
 
 async function handleRegister() {
+  const valid = await formRef.value?.validate().catch(() => false)
+  if (!valid) return
   try {
-    if (!user.value.username || !user.value.password) {
-      ElMessage.warning('请输入用户名和密码')
-      return
-    }
     await authStore.register(user.value.username, user.value.password)
     ElMessage.success('注册成功')
     router.push('/')

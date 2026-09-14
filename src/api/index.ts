@@ -5,13 +5,20 @@ const api = axios.create({
   // 部署后由 Nginx 把 /api 转发到后端；本地开发由 vite 代理转发
   baseURL: '/api',
   timeout: 5000,
-  withCredentials:true
+  withCredentials: true,
 })
+
+// 401 时的清理动作由外部注册，避免 api 层反向依赖 store 造成循环引用
+let unauthorizedHandler: (() => void) | null = null
+export function setUnauthorizedHandler(handler: () => void) {
+  unauthorizedHandler = handler
+}
 
 api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (isAxiosError(err) && err.response?.status === 401) {
+      unauthorizedHandler?.()
       router.push('/login')
     }
     return Promise.reject(err)

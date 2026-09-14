@@ -42,5 +42,10 @@ export const useUserInfoStore = defineStore('userinfo', () => {
     }
   }
 
-  return { userInfo, isFilled, updateInfo, loadInfo }
+  function reset() {
+    userInfo.value = { ...DEFAULT_INFO }
+    localStorage.removeItem(USERINFO_KEY)
+  }
+
+  return { userInfo, isFilled, updateInfo, loadInfo, reset }
 })

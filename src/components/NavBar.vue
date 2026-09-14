@@ -28,6 +28,7 @@
 <script setup lang="ts">
 import { useAuthStore } from '@/stores/auth'
 import { useCartStore } from '@/stores/cart'
+import { useUserInfoStore } from '@/stores/userinfo'
 import { storeToRefs } from 'pinia'
 
 const userStore = useAuthStore()
@@ -36,10 +37,13 @@ const { isLoggedIn, user } = storeToRefs(userStore)
 const cartStore = useCartStore()
 const { total } = storeToRefs(cartStore)
 
+const userInfoStore = useUserInfoStore()
+
 function handleLogout() {
   if (!confirm('确定退出登录吗？')) return
   userStore.logout()
   cartStore.reset()
+  userInfoStore.reset()
 }
 </script>
 
