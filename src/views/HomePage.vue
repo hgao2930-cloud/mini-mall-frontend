@@ -24,7 +24,7 @@
       </div>
     </div>
 
-    <div class="footer">© 2026 MiniMall</div>
+    <div class="footer">© 2026 MiniMall · 商品图片来源于网络，仅用于学习演示，版权归原作者所有</div>
   </div>
 </template>
 
