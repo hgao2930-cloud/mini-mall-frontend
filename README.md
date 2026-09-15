@@ -5,6 +5,23 @@
 - 在线预览：http://8.149.237.91
 - 配套后端：[mini-mall-server](https://github.com/hgao2930-cloud/mini-mall-server)
 
+## 项目截图
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/01-home.jpg" alt="首页（热门推荐）" /></td>
+    <td width="50%"><img src="docs/screenshots/02-products.jpg" alt="商品列表（后端分页 + 触底加载）" /></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/03-detail.jpg" alt="商品详情（库存 / 售罄）" /></td>
+    <td width="50%"><img src="docs/screenshots/04-cart.jpg" alt="购物车" /></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/05-checkout.jpg" alt="结算页" /></td>
+    <td width="50%"><img src="docs/screenshots/06-orders.jpg" alt="订单列表（状态流转）" /></td>
+  </tr>
+</table>
+
 ## 技术栈
 
 - Vue 3（Composition API + `<script setup>`）+ TypeScript
