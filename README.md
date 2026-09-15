@@ -8,7 +8,7 @@
 ## 技术栈
 
 - Vue 3（Composition API + `<script setup>`）+ TypeScript
-- Vite：开发服务器与构建（本地通过 proxy 把 `/api` 转发到后端）
+- Vite：开发服务器与构建（开发环境通过 proxy 把 `/api` 转发到后端，生产环境由 Nginx 反向代理）
 - Vue Router 4：路由懒加载、登录守卫、404 兜底
 - Pinia：`auth` / `cart` / `userinfo` 三个 store
 - Element Plus：表单、弹窗、消息提示
