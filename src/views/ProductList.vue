@@ -64,7 +64,7 @@
 import { getProducts, getCategory, type Product } from '@/api/products'
 import { useAsyncData } from '@/composables/useAsyncData'
 import { debounce } from '@/composables/debounce'
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { handleError } from '@/utils/error'
 
@@ -125,6 +125,8 @@ async function applyFilters(next: { keyword?: string; category?: string } = {}) 
     list.value = pageData.value.products
     hasMore.value = pageData.value.hasMore
     listSeq = seq // 标记列表数据属于当前代次
+    await nextTick()
+    window.scrollTo({ top: 0 })
   }
 }
 
