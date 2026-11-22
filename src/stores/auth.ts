@@ -7,6 +7,8 @@ export const useAuthStore = defineStore('auth', () => {
   const USER_KEY = 'user'
   const user = ref<User | null>(getUserFromStorage())
   const isLoggedIn = computed(() => !!user.value)
+  const initialized = ref(false)
+  let initPromise: Promise<void> | null = null
 
   function clearUser() {
     user.value = null
@@ -14,19 +16,27 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function init() {
-    try {
-      const res = await getMe()
-      if (!res.data.user) {
+    if (initialized.value) return
+    if (initPromise) return initPromise
+    initPromise = (async () => {
+      try {
+        const res = await getMe()
+        if (!res.data.user) {
+          clearUser()
+          return
+        }
+        user.value = res.data.user
+        localStorage.setItem(USER_KEY, JSON.stringify(res.data.user))
+      } catch (err) {
+        // 校验失败时不能保留旧的登录态，否则路由守卫会误判成已登录
         clearUser()
-        return
+        handleError(err)
+      } finally {
+        initialized.value = true
+        initPromise = null
       }
-      user.value = res.data.user
-      localStorage.setItem(USER_KEY, JSON.stringify(res.data.user))
-    } catch (err) {
-      // 校验失败时不能保留旧的登录态，否则路由守卫会误判成已登录
-      clearUser()
-      handleError(err)
-    }
+    })()
+    return initPromise
   }
   function getUserFromStorage(): User | null {
     try {
@@ -59,5 +69,5 @@ export const useAuthStore = defineStore('auth', () => {
       clearUser()
     }
   }
-  return { user, isLoggedIn, login, register, logout, init, clearUser }
+  return { user, isLoggedIn, initialized, login, register, logout, init, clearUser }
 })

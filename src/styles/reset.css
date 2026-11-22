@@ -9,14 +9,21 @@
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
 }
 
 body {
+  min-height: 100vh;
   font-family: var(--font-family);
   font-size: 14px;
   color: var(--color-text);
   background: var(--color-bg);
   line-height: 1.6;
+}
+
+::selection {
+  background: rgba(0, 102, 204, 0.16);
+  color: var(--color-ink);
 }
 
 a {
@@ -46,4 +53,19 @@ input {
   font: inherit;
   border: none;
   outline: none;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-block {
+  background: linear-gradient(90deg, #eceef1 25%, #f5f6f8 50%, #eceef1 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite ease-in-out;
 }

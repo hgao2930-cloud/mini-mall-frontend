@@ -18,8 +18,17 @@ api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (isAxiosError(err) && err.response?.status === 401) {
-      unauthorizedHandler?.()
-      router.push('/login')
+      const reqUrl = err.config?.url ?? ''
+      if (!reqUrl.includes('/auth/login')) {
+        unauthorizedHandler?.()
+        const current = router.currentRoute.value
+        if (current.path !== '/login') {
+          router.push({
+            path: '/login',
+            query: current.path !== '/register' ? { redirect: current.fullPath } : undefined,
+          })
+        }
+      }
     }
     return Promise.reject(err)
   },

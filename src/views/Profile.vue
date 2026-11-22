@@ -2,75 +2,83 @@
   <div class="profile-page">
     <h1 class="page-title">个人中心</h1>
 
-    <div class="profile-card">
-      <div class="profile-avatar">{{ user?.username?.charAt(0).toUpperCase() }}</div>
-      <div class="profile-info">
-        <div class="info-row">
-          <span class="info-label">用户名</span>
-          <span class="info-value">{{ user?.username }}</span>
+    <!-- 用户信息卡 -->
+    <div class="profile-card user-hero-card">
+      <div class="user-hero-left">
+        <div class="profile-avatar">{{ user?.username?.charAt(0).toUpperCase() }}</div>
+        <div>
+          <div class="user-greeting">{{ user?.username }}</div>
+          <div class="user-role">MiniMall 个人账户 · 登录状态有效</div>
         </div>
-        <!-- <div class="info-row">
-          <span class="info-label">用户ID</span>
-          <span class="info-value info-id">{{ user?.id }}</span>
-        </div> -->
+      </div>
+      <div class="quick-pills">
+        <RouterLink to="/cart" class="pill-link">购物车</RouterLink>
+        <RouterLink to="/orders" class="pill-link pill-link-dark">我的订单</RouterLink>
       </div>
     </div>
 
+    <!-- 订单统计 -->
+    <div class="profile-card">
+      <div class="card-header">
+        <h2 class="card-title">订单概览</h2>
+        <RouterLink to="/orders" class="text-link">查看全部订单 →</RouterLink>
+      </div>
+      <div class="stat-grid">
+        <RouterLink to="/orders" class="stat-item">
+          <div class="stat-num">{{ orderCount }}</div>
+          <div class="stat-label">总订单</div>
+        </RouterLink>
+        <RouterLink to="/orders" class="stat-item stat-pending">
+          <div class="stat-num">{{ pendingCount }}</div>
+          <div class="stat-label">待付款</div>
+        </RouterLink>
+        <RouterLink to="/orders" class="stat-item stat-shipping">
+          <div class="stat-num">{{ shippingCount }}</div>
+          <div class="stat-label">待收货</div>
+        </RouterLink>
+        <RouterLink to="/orders" class="stat-item stat-done">
+          <div class="stat-num">{{ doneCount }}</div>
+          <div class="stat-label">已完成</div>
+        </RouterLink>
+      </div>
+    </div>
+
+    <!-- 收货信息 -->
     <div class="profile-card">
       <div class="card-header">
         <h2 class="card-title">收货信息</h2>
-        <button class="edit-btn" @click="openDialog">修改信息</button>
+        <button type="button" class="edit-btn" @click="openDialog">
+          {{ isFilled() ? '修改信息' : '立即填写' }}
+        </button>
       </div>
+
       <div v-if="isFilled()" class="shipping-info">
         <div class="info-row">
           <span class="info-label">收货人</span>
           <span class="info-value">{{ userInfo.name }}</span>
         </div>
         <div class="info-row">
-          <span class="info-label">电话</span>
-          <span class="info-value">{{ userInfo.phone }}</span>
+          <span class="info-label">联系电话</span>
+          <span class="info-value tabular">{{ userInfo.phone }}</span>
         </div>
         <div class="info-row">
-          <span class="info-label">地址</span>
+          <span class="info-label">收货地址</span>
           <span class="info-value">{{ userInfo.address }}</span>
         </div>
       </div>
-      <div v-else class="shipping-empty">
-        <p>还没有填写收货信息</p>
-        <button class="edit-btn" @click="openDialog">立即填写</button>
-      </div>
-    </div>
 
-    <div class="profile-card">
-      <h2 class="card-title">订单统计</h2>
-      <div class="stat-grid">
-        <div class="stat-item">
-          <div class="stat-num">{{ orderCount }}</div>
-          <div class="stat-label">总订单</div>
-        </div>
-        <div class="stat-item stat-pending">
-          <div class="stat-num">{{ pendingCount }}</div>
-          <div class="stat-label">待付款</div>
-        </div>
-        <div class="stat-item stat-shipping">
-          <div class="stat-num">{{ shippingCount }}</div>
-          <div class="stat-label">待收货</div>
-        </div>
-        <div class="stat-item stat-done">
-          <div class="stat-num">{{ doneCount }}</div>
-          <div class="stat-label">已完成</div>
-        </div>
+      <div v-else class="shipping-empty">
+        <p>还没有填写收货信息，完善后可快速下单结算</p>
       </div>
     </div>
 
     <div class="quick-actions">
-      <RouterLink to="/orders" class="action-btn">查看订单</RouterLink>
-      <RouterLink to="/products" class="action-btn">去购物</RouterLink>
+      <RouterLink to="/products" class="action-btn">继续购物</RouterLink>
       <RouterLink to="/" class="action-btn">返回首页</RouterLink>
     </div>
 
     <!-- 编辑弹窗 -->
-    <el-dialog v-model="dialogVisible" title="修改收货信息" width="420px">
+    <el-dialog v-model="dialogVisible" title="修改收货信息" width="440px">
       <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
         <el-form-item label="收货人" prop="name">
           <el-input v-model="form.name" placeholder="请输入收货人姓名" />
@@ -176,13 +184,13 @@ onMounted(async () => {
 }
 
 .page-title {
-  margin-bottom: 24px;
-  font-size: 22px;
-  font-weight: 600;
-  color: var(--color-text);
+  margin-bottom: 22px;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-ink);
 }
 
-/* ===== 卡片 ===== */
 .profile-card {
   margin-bottom: 20px;
   padding: 24px;
@@ -191,114 +199,127 @@ onMounted(async () => {
   box-shadow: var(--shadow);
 }
 
+/* ===== 顶部用户卡 ===== */
+.user-hero-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.user-hero-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.profile-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #111827, #374151);
+  color: #fff;
+  font-size: 24px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.user-greeting {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.user-role {
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.quick-pills {
+  display: flex;
+  gap: 10px;
+}
+
+.pill-link {
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-ink);
+  background: var(--color-stage);
+  border-radius: 999px;
+  transition: all var(--transition);
+}
+
+.pill-link:hover {
+  background: var(--color-border);
+}
+
+.pill-link-dark {
+  color: #fff;
+  background: var(--color-ink);
+}
+
+.pill-link-dark:hover {
+  background: var(--color-ink-hover);
+}
+
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-hairline);
 }
 
 .card-title {
   font-size: 16px;
-  font-weight: 600;
-  color: var(--color-text);
+  font-weight: 700;
+  color: var(--color-ink);
 }
 
-/* ===== 头像 ===== */
-.profile-avatar {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background: var(--color-primary);
-  color: #fff;
-  font-size: 28px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 16px;
-}
-
-/* ===== 信息行 ===== */
-.info-row {
-  display: flex;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--color-border-light);
-}
-
-.info-row:last-child {
-  border-bottom: none;
-}
-
-.info-label {
-  width: 80px;
-  flex-shrink: 0;
-  font-size: 14px;
-  color: var(--color-text-secondary);
-}
-
-.info-value {
-  font-size: 14px;
-  color: var(--color-text);
-}
-
-.info-id {
-  font-family: monospace;
+.text-link {
   font-size: 13px;
-  color: var(--color-text-placeholder);
-}
-
-/* ===== 收货信息 ===== */
-.shipping-empty {
-  text-align: center;
-  padding: 20px 0;
-  color: var(--color-text-secondary);
-  font-size: 14px;
-}
-
-.shipping-empty p {
-  margin-bottom: 12px;
-}
-
-.edit-btn {
-  padding: 4px 14px;
-  font-size: 13px;
+  font-weight: 500;
   color: var(--color-primary);
-  border: 1px solid var(--color-primary);
-  border-radius: var(--border-radius-sm);
-  transition: all var(--transition);
 }
 
-.edit-btn:hover {
-  background: var(--color-primary);
-  color: #fff;
-}
-
-/* ===== 统计 ===== */
+/* ===== 统计网格 ===== */
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-top: 16px;
+  gap: 14px;
 }
 
 .stat-item {
   text-align: center;
-  padding: 16px 0;
-  border-radius: var(--border-radius);
-  background: var(--color-bg);
+  padding: 20px 12px;
+  border-radius: 12px;
+  background: var(--color-stage);
+  transition: all var(--transition);
+}
+
+.stat-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-xs);
 }
 
 .stat-num {
   font-size: 28px;
   font-weight: 700;
-  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ink);
 }
 
 .stat-label {
-  margin-top: 6px;
+  margin-top: 4px;
   font-size: 13px;
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
 }
 
 .stat-pending .stat-num {
@@ -313,28 +334,97 @@ onMounted(async () => {
   color: var(--color-success);
 }
 
+/* ===== 收货信息 ===== */
+.info-row {
+  display: flex;
+  gap: 16px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.info-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.info-label {
+  width: 72px;
+  flex-shrink: 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.info-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-ink);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.shipping-empty {
+  padding: 20px;
+  border-radius: 12px;
+  background: var(--color-stage);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.edit-btn {
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-ink);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  transition: all var(--transition);
+}
+
+.edit-btn:hover {
+  border-color: var(--color-ink);
+  background: var(--color-stage);
+}
+
 /* ===== 快捷操作 ===== */
 .quick-actions {
   display: flex;
   gap: 12px;
-  margin-top: 24px;
 }
 
 .action-btn {
   flex: 1;
-  padding: 12px;
+  padding: 13px;
   text-align: center;
   font-size: 14px;
-  color: var(--color-primary);
+  font-weight: 500;
+  color: var(--color-ink);
   background: var(--color-bg-white);
-  border: 1px solid var(--color-border);
   border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
   transition: all var(--transition);
 }
 
 .action-btn:hover {
-  color: var(--color-primary);
-  border-color: var(--color-primary);
-  background: var(--color-primary-light);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+
+@media (max-width: 768px) {
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .profile-page {
+    padding: 18px 16px 36px;
+  }
+
+  .profile-card {
+    padding: 18px;
+  }
 }
 </style>
